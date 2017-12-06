@@ -24,16 +24,30 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 
-public class EnvoyerInvitationActivity extends AppCompatActivity{
+public class EnvoyerInvitationActivity extends AppCompatActivity {
     private final int PICK_CONTACT = 2015;
     private static final int REQUEST_LOCATION = 1;
     private LocationManager locationManager;
-    String lattitude,longitude;
+    String lattitude, longitude;
     EditText position;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_envoyer_invitation);
+
+        Bundle extras = getIntent().getExtras();
+        if(extras != null && extras.size() != 0){
+            double latitude = 0;
+            latitude = extras.getDouble("latitude");
+            double longitude = 0;
+            longitude = extras.getDouble("longitude");
+            if(latitude != 0 && longitude != 0){
+                position = (EditText) findViewById(R.id.locationEditView);
+                position.setText(Double.toString(latitude) + Double.toString(longitude));
+            }
+        }
+
         ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -140,6 +154,8 @@ public class EnvoyerInvitationActivity extends AppCompatActivity{
     }
 
     public void sendMessage(View view) {
+
+
         Context context = getApplicationContext();
         EditText editTextNumero = (EditText) findViewById(R.id.editTextNumero);
 
@@ -152,17 +168,20 @@ public class EnvoyerInvitationActivity extends AppCompatActivity{
         int duration = Toast.LENGTH_SHORT;
         Toast toastErreurNum = Toast.makeText(context, erreurNumero, duration);
 
+
+            if(numero != null && numero.length() >=4){
+
+                for(int i = 0; i < nums.length; i++){
+                    SmsManager.getDefault().sendTextMessage(nums[i], null, "Invitation", null, null);
+                }
+
+            }
+
         if(numero != null && numero.length() < 4){
             toastErreurNum.show();
         }
 
-        if(numero != null && numero.length() >=4){
 
-            for(int i = 0; i < nums.length; i++){
-                SmsManager.getDefault().sendTextMessage(nums[i], null, "Invitation", null, null);
-            }
-
-        }
     }
 
 
@@ -171,4 +190,8 @@ public class EnvoyerInvitationActivity extends AppCompatActivity{
         EnvoyerInvitationActivity.this.startActivity(goBack);
     }
 
+    public void changerPosition(View view) {
+        Intent changerPosition = new Intent(EnvoyerInvitationActivity.this, ChangerPositionActivity.class);
+        EnvoyerInvitationActivity.this.startActivity(changerPosition);
+    }
 }
