@@ -6,4 +6,5 @@
     <string name="title_activity_changer_position">Map</string>
     <string name="longitude"></string>
     <string name="latitude"></string>
+    <string name="title_activity_consulter_position">Map</string>
 </resources>

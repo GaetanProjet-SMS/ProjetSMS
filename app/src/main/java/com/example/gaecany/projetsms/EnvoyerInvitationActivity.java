@@ -12,7 +12,9 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -27,25 +29,26 @@ import java.util.ArrayList;
 public class EnvoyerInvitationActivity extends AppCompatActivity {
     private final int PICK_CONTACT = 2015;
     private static final int REQUEST_LOCATION = 1;
+    private static final int MY_PERMISSIONS_REQUEST_SENS_SMS=1;
     private LocationManager locationManager;
-    String lattitude, longitude;
+    String latitude, longitude;
     EditText position;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_envoyer_invitation);
-
+        position = (EditText) findViewById(R.id.locationEditView);
         Bundle extras = getIntent().getExtras();
         if(extras != null && extras.size() != 0){
-            double latitude = 0;
-            latitude = extras.getDouble("latitude");
-            double longitude = 0;
-            longitude = extras.getDouble("longitude");
-            if(latitude != 0 && longitude != 0){
-                position = (EditText) findViewById(R.id.locationEditView);
-                position.setText(Double.toString(latitude) + Double.toString(longitude));
-            }
+
+            double lati = 0;
+            lati = extras.getDouble("latitude");
+            double longi = 0;
+            longi = extras.getDouble("longitude");
+            position.setText(Double.toString(lati) + " ; " + Double.toString(longi));
+
         }
 
         ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION);
@@ -56,8 +59,9 @@ public class EnvoyerInvitationActivity extends AppCompatActivity {
 
         } else if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 
-            position = (EditText) findViewById(R.id.locationEditView);
-            position.setText(getLocation());
+            if(position.getText().length() == 0) {
+                position.setText(getLocation());
+            }
         }
         (findViewById(R.id.pickContact)).setOnClickListener( new View.OnClickListener() {
             @Override
@@ -96,16 +100,16 @@ public class EnvoyerInvitationActivity extends AppCompatActivity {
                 locationAUtiliser = location2;
 
             } else {
-                Toast.makeText(this, "Unable to Trace your location", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Impossible de vous localiser", Toast.LENGTH_SHORT).show();
             }
 
             if (locationAUtiliser != null) {
                 double latti = locationAUtiliser.getLatitude();
                 double longi = locationAUtiliser.getLongitude();
-                lattitude = String.valueOf(latti);
+                latitude = String.valueOf(latti);
                 longitude = String.valueOf(longi);
 
-                pos = lattitude + " " + longitude;
+                pos = latitude + " ; " + longitude;
             }
         }
 
@@ -115,14 +119,14 @@ public class EnvoyerInvitationActivity extends AppCompatActivity {
     protected void buildAlertMessageNoGps() {
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage("Please Turn ON your GPS Connection")
+        builder.setMessage("Veuillez activer votre connexion GPS")
                 .setCancelable(false)
-                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                .setPositiveButton("Oui", new DialogInterface.OnClickListener() {
                     public void onClick(final DialogInterface dialog, final int id) {
                         startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     }
                 })
-                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                .setNegativeButton("Non", new DialogInterface.OnClickListener() {
                     public void onClick(final DialogInterface dialog, final int id) {
                         dialog.cancel();
                     }
@@ -157,31 +161,56 @@ public class EnvoyerInvitationActivity extends AppCompatActivity {
 
 
         Context context = getApplicationContext();
+
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SENS_SMS);
+        }
+        else{
+            formatEtEnvoyerSMS(context);
+        }
+    }
+
+    private void formatEtEnvoyerSMS(Context context) {
         EditText editTextNumero = (EditText) findViewById(R.id.editTextNumero);
-
         String numero = editTextNumero.getText().toString();
-
         String[] nums = numero.split(";");
 
-        CharSequence erreurNumero = "Le numero doit faire 4 caracteres.";
+        CharSequence erreurNumero = "Veuillez saisir le bon format de numéro";
+        CharSequence erreurPosition = "Veuillez saisir un lieu de rendez-vous";
 
         int duration = Toast.LENGTH_SHORT;
         Toast toastErreurNum = Toast.makeText(context, erreurNumero, duration);
+        Toast toastErreurPos = Toast.makeText(context, erreurPosition, duration);
 
+        if (numero != null && numero.length() >= 4) {
 
-            if(numero != null && numero.length() >=4){
-
-                for(int i = 0; i < nums.length; i++){
-                    SmsManager.getDefault().sendTextMessage(nums[i], null, "Invitation", null, null);
-                }
-
+            for (int i = 0; i < nums.length; i++) {
+                SmsManager.getDefault().sendTextMessage(nums[i], null, String.valueOf(position.getText()), null, null);
             }
 
-        if(numero != null && numero.length() < 4){
-            toastErreurNum.show();
         }
 
+        if(position == null || this.position.getText().toString().length() == 0){
+            toastErreurPos.show();
+        }
 
+        if (numero != null && numero.length() < 4) {
+            toastErreurNum.show();
+        }
+    }
+
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        Context context = getApplicationContext();
+        if (requestCode == MY_PERMISSIONS_REQUEST_SENS_SMS) {
+
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                formatEtEnvoyerSMS(context);
+            }
+            else{
+                Toast.makeText(context, "Refus autorisation d'envoie des sms", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
 

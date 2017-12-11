@@ -43,7 +43,10 @@
 
         <activity
             android:name=".ChangerPositionActivity"
-            android:label="@string/title_activity_changer_position"></activity>
+            android:label="@string/title_activity_changer_position" />
+        <activity
+            android:name=".ConsulterPositionActivity"
+            android:label="@string/title_activity_consulter_position"></activity>
     </application>
 
 </manifest>
